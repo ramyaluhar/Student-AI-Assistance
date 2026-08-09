@@ -22,6 +22,8 @@ import AdminPanel from './pages/AdminPanel';
 import NotFound from './pages/NotFound';
 import Landing from './pages/Landing';
 
+import ForgotPassword from './pages/ForgotPassword';
+
 function App() {
   return (
     <>
@@ -52,6 +54,8 @@ function App() {
 
         <Route path="/404" element={<NotFound />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
+
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Routes>
     </>
   );

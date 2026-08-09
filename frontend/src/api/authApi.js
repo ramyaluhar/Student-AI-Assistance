@@ -8,7 +8,7 @@ export const verifyRegistrationOtpApi = (data) =>
   api.post('/auth/verify-registration', data);
 
 export const resendOtpApi = (data) =>
-  api.post('/auth/resend-registration', data);
+  api.post('/auth/resend-otp', data);
 
 export const verifyEmailApi = (data) =>
   api.post('/auth/verify-registration', data);

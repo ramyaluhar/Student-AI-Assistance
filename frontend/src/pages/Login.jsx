@@ -19,38 +19,51 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
-    const errs = {};
+  const errs = {};
 
-    // Fixed email validation
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-      errs.email = 'Enter a valid email address';
-    }
+  if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+    errs.email = 'Enter a valid email address';
+  }
 
-    if (!form.password) {
-      errs.password = 'Password is required';
-    }
+  setErrors(errs);
 
-    setErrors(errs);
+  return Object.keys(errs).length === 0;
+};
 
-    return Object.keys(errs).length === 0;
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Only validate email on the frontend first.
+  // Password validation will happen after we know the email is valid.
+  const errs = {};
 
-    if (!validate()) return;
+  if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+    errs.email = 'Enter a valid email address';
+  }
 
-    setLoading(true);
+  setErrors(errs);
 
-    try {
-      await login(form);
-      navigate('/dashboard');
-    } catch (err) {
-      // Toast already shown by axios interceptor
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (Object.keys(errs).length > 0) return;
+
+  setLoading(true);
+
+  try {
+    await login(form);
+    navigate('/dashboard');
+  } catch (err) {
+    // Backend error will be displayed here
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      'Login failed. Please try again.';
+
+    setErrors({
+      password: message,
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 py-8 transition-colors duration-200">
@@ -155,6 +168,16 @@ const Login = () => {
                 {errors.password}
               </p>
             )}
+          </div>
+
+          {/* Forgot Password */}
+          <div className="text-right">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-primary-600 font-semibold hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
 
 

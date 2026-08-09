@@ -425,52 +425,73 @@ const resendOtp = asyncHandler(async (req, res) => {
 // LOGIN
 // POST /api/auth/login
 // ============================================================
-
 const loginUser = asyncHandler(async (req, res) => {
-
   const { email, password } = req.body;
 
   const normalizedEmail = normalizeEmail(email);
 
-
-  if (!normalizedEmail || !password) {
-
+  // Email is required
+  if (!normalizedEmail) {
     res.status(400);
-
-    throw new Error(
-      'Email and password are required'
-    );
+    throw new Error('Email is required');
   }
 
+  // Password is required
+  if (!password) {
+    res.status(400);
+    throw new Error('Password is required');
+  }
 
   // Find user including password
   const user = await User.findOne({
     email: normalizedEmail,
   }).select('+password');
 
-
-  if (
-    !user ||
-    !(await user.matchPassword(password))
-  ) {
-
-    res.status(401);
-
+  // Email is not registered
+  if (!user) {
+    res.status(404);
     throw new Error(
-      'Invalid email or password'
+      'No account found with this email. Please register yourself first.'
     );
   }
 
+  // Check whether email is verified
+  if (!user.isEmailVerified) {
+    res.status(403);
+    throw new Error(
+      'Please verify your email before logging in.'
+    );
+  }
+
+  // Check password
+  const passwordMatch = await user.matchPassword(password);
+
+  if (!passwordMatch) {
+    res.status(401);
+    throw new Error('Incorrect password');
+  }
 
   // Check active account
   if (!user.isActive) {
-
     res.status(403);
-
     throw new Error(
       'Your account has been deactivated. Contact admin.'
     );
   }
+
+  // Login successful
+  res.json({
+    success: true,
+    data: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      theme: user.theme,
+      avatar: user.avatar,
+      token: generateToken(user._id),
+    },
+  });
 
 
   // Generate token
