@@ -1,0 +1,10 @@
+# Root .gitignore — covers both backend and frontend if committed as one repo
+node_modules/
+.env
+.env.local
+dist/
+build/
+*.log
+.DS_Store
+backend/uploads/*
+!backend/uploads/.gitkeep
