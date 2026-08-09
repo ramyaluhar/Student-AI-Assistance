@@ -78,8 +78,12 @@ const handleSubmit = async (e) => {
         {/* Header */}
         <div className="text-center mb-8">
 
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary-600 text-white text-xl font-bold">
-            AI
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl bg-primary-600 text-white text-xl font-bold">
+            <img
+                  src="/logo.png"
+                  alt="Assist AI"
+                  className="h-full w-full object-cover object-center"
+                  />
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
