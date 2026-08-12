@@ -4,7 +4,6 @@
 // and profile management.
 
 const asyncHandler = require('express-async-handler');
-const bcrypt = require('bcryptjs');
 
 const User = require('../models/User');
 const EmailVerification = require('../models/EmailVerification');
@@ -20,7 +19,6 @@ const generateOtp = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-
 const normalizeEmail = (email) => {
   return String(email || '').toLowerCase().trim();
 };
@@ -31,7 +29,6 @@ const normalizeEmail = (email) => {
 // ============================================================
 
 const sendOtpEmail = async (email, otp, purpose) => {
-
   const isRegistration = purpose === 'registration';
 
   const subject = isRegistration
@@ -117,7 +114,6 @@ const sendOtpEmail = async (email, otp, purpose) => {
 // ============================================================
 
 const registerUser = asyncHandler(async (req, res) => {
-
   const {
     name,
     email,
@@ -129,13 +125,11 @@ const registerUser = asyncHandler(async (req, res) => {
 
   const normalizedEmail = normalizeEmail(email);
 
-
   // Check required fields
   if (!name || !normalizedEmail || !password) {
     res.status(400);
     throw new Error('Name, email and password are required');
   }
-
 
   // Check if account already exists
   const userExists = await User.findOne({
@@ -147,7 +141,6 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error('An account with this email already exists');
   }
 
-
   // Generate OTP
   const otp = generateOtp();
 
@@ -156,25 +149,17 @@ const registerUser = asyncHandler(async (req, res) => {
     Date.now() + 10 * 60 * 1000
   );
 
-
   // Delete previous registration OTP
   await EmailVerification.deleteMany({
     email: normalizedEmail,
     purpose: 'registration',
   });
 
-
   /*
-   * IMPORTANT:
-   *
-   * We store the password temporarily in the OTP document.
-   * This document automatically expires after 10 minutes.
-   *
-   * We DO NOT hash it here because User.js already hashes
-   * passwords using its pre-save hook.
+   * Store registration information temporarily
+   * until the email is verified.
    */
   await EmailVerification.create({
-
     email: normalizedEmail,
 
     otp,
@@ -192,14 +177,12 @@ const registerUser = asyncHandler(async (req, res) => {
     expiresAt,
   });
 
-
   // Send OTP
   await sendOtpEmail(
     normalizedEmail,
     otp,
     'registration'
   );
-
 
   res.status(200).json({
     success: true,
@@ -218,7 +201,6 @@ const registerUser = asyncHandler(async (req, res) => {
 // ============================================================
 
 const verifyEmail = asyncHandler(async (req, res) => {
-
   const { email, otp } = req.body;
 
   if (!email || !otp) {
@@ -228,13 +210,11 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
   const normalizedEmail = normalizeEmail(email);
 
-
   // Find registration OTP
   const verification = await EmailVerification.findOne({
     email: normalizedEmail,
     purpose: 'registration',
   });
-
 
   if (!verification) {
     res.status(400);
@@ -243,32 +223,25 @@ const verifyEmail = asyncHandler(async (req, res) => {
     );
   }
 
-
   // Check expiry
   if (verification.expiresAt < new Date()) {
-
     await EmailVerification.deleteOne({
       _id: verification._id,
     });
 
     res.status(400);
-
     throw new Error(
       'OTP has expired. Please request a new OTP.'
     );
   }
 
-
   // Check OTP
   if (
     verification.otp !== String(otp).trim()
   ) {
-
     res.status(400);
-
     throw new Error('Invalid OTP');
   }
-
 
   // Make sure user wasn't created meanwhile
   const existingUser = await User.findOne({
@@ -276,72 +249,77 @@ const verifyEmail = asyncHandler(async (req, res) => {
   });
 
   if (existingUser) {
-
     await EmailVerification.deleteOne({
       _id: verification._id,
     });
 
     res.status(400);
-
     throw new Error(
       'An account with this email already exists'
     );
   }
-
 
   // ========================================================
   // CREATE USER
   // ========================================================
 
   /*
-   * IMPORTANT:
-   *
    * User.js has a bcrypt pre-save hook.
    *
    * Therefore we give User.create() the ORIGINAL password.
    * User.js will hash it exactly ONCE.
-   *
-   * DO NOT bcrypt.hash() this password here.
    */
 
   const user = await User.create({
     name: verification.registrationData.name,
+
     email: normalizedEmail,
+
     password: verification.registrationData.password,
+
+    // IMPORTANT:
+    // Save registration information permanently
     college: verification.registrationData.college || '',
+
     branch: verification.registrationData.branch || '',
+
     semester:
       verification.registrationData.semester || 1,
 
-  // Email has been successfully verified through OTP
-  isEmailVerified: true,
+    // Email verified
+    isEmailVerified: true,
   });
-
 
   // Delete used OTP
   await EmailVerification.deleteOne({
     _id: verification._id,
   });
 
-
   // Generate login token
   const token = generateToken(user._id);
 
+  // IMPORTANT:
+  // Return College / Branch / Semester too.
+  // This makes the information appear immediately
+  // after registration and OTP verification.
 
   res.status(201).json({
-
     success: true,
 
     message:
       'Email verified and account created successfully',
 
     data: {
-
       _id: user._id,
 
       name: user.name,
 
       email: user.email,
+
+      // Profile information
+      college: user.college,
+      branch: user.branch,
+      semester: user.semester,
 
       role: user.role,
 
@@ -361,7 +339,6 @@ const verifyEmail = asyncHandler(async (req, res) => {
 // ============================================================
 
 const resendOtp = asyncHandler(async (req, res) => {
-
   const { email } = req.body;
 
   if (!email) {
@@ -371,7 +348,6 @@ const resendOtp = asyncHandler(async (req, res) => {
 
   const normalizedEmail = normalizeEmail(email);
 
-
   // Find pending registration
   const verification =
     await EmailVerification.findOne({
@@ -379,16 +355,12 @@ const resendOtp = asyncHandler(async (req, res) => {
       purpose: 'registration',
     });
 
-
   if (!verification) {
-
     res.status(404);
-
     throw new Error(
       'Registration session not found. Please register again.'
     );
   }
-
 
   // Generate new OTP
   const otp = generateOtp();
@@ -399,9 +371,7 @@ const resendOtp = asyncHandler(async (req, res) => {
     Date.now() + 10 * 60 * 1000
   );
 
-
   await verification.save();
-
 
   // Send new OTP
   await sendOtpEmail(
@@ -410,11 +380,8 @@ const resendOtp = asyncHandler(async (req, res) => {
     'registration'
   );
 
-
   res.json({
-
     success: true,
-
     message:
       'A new OTP has been sent to your email',
   });
@@ -425,6 +392,7 @@ const resendOtp = asyncHandler(async (req, res) => {
 // LOGIN
 // POST /api/auth/login
 // ============================================================
+
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -464,7 +432,8 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   // Check password
-  const passwordMatch = await user.matchPassword(password);
+  const passwordMatch =
+    await user.matchPassword(password);
 
   if (!passwordMatch) {
     res.status(401);
@@ -479,36 +448,27 @@ const loginUser = asyncHandler(async (req, res) => {
     );
   }
 
+  // Generate token ONCE
+  const token = generateToken(user._id);
+
   // Login successful
   res.json({
     success: true,
-    data: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      theme: user.theme,
-      avatar: user.avatar,
-      token: generateToken(user._id),
-    },
-  });
-
-
-  // Generate token
-  const token = generateToken(user._id);
-
-
-  res.json({
-
-    success: true,
 
     data: {
-
       _id: user._id,
 
       name: user.name,
 
       email: user.email,
+
+      // IMPORTANT:
+      // Include these every time the user logs in.
+      college: user.college,
+
+      branch: user.branch,
+
+      semester: user.semester,
 
       role: user.role,
 
@@ -528,39 +488,30 @@ const loginUser = asyncHandler(async (req, res) => {
 // ============================================================
 
 const forgotPassword = asyncHandler(async (req, res) => {
-
   const { email } = req.body;
 
   if (!email) {
-
     res.status(400);
-
     throw new Error('Email is required');
   }
 
-
   const normalizedEmail = normalizeEmail(email);
-
 
   const user = await User.findOne({
     email: normalizedEmail,
   });
 
-
   /*
    * Don't reveal whether an email exists.
    */
+
   if (!user) {
-
     return res.json({
-
       success: true,
-
       message:
         'If an account exists with this email, an OTP has been sent.',
     });
   }
-
 
   // Generate OTP
   const otp = generateOtp();
@@ -569,17 +520,14 @@ const forgotPassword = asyncHandler(async (req, res) => {
     Date.now() + 10 * 60 * 1000
   );
 
-
   // Delete old reset OTP
   await EmailVerification.deleteMany({
     email: normalizedEmail,
     purpose: 'password-reset',
   });
 
-
   // Create reset OTP
   await EmailVerification.create({
-
     email: normalizedEmail,
 
     otp,
@@ -589,7 +537,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
     expiresAt,
   });
 
-
   // Send OTP
   await sendOtpEmail(
     normalizedEmail,
@@ -597,9 +544,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     'password-reset'
   );
 
-
   res.json({
-
     success: true,
 
     message:
@@ -614,69 +559,51 @@ const forgotPassword = asyncHandler(async (req, res) => {
 // ============================================================
 
 const verifyResetOtp = asyncHandler(async (req, res) => {
-
   const { email, otp } = req.body;
 
   if (!email || !otp) {
-
     res.status(400);
-
     throw new Error(
       'Email and OTP are required'
     );
   }
 
-
   const normalizedEmail = normalizeEmail(email);
-
 
   const verification =
     await EmailVerification.findOne({
-
       email: normalizedEmail,
-
       purpose: 'password-reset',
     });
 
-
   if (!verification) {
-
     res.status(400);
-
     throw new Error(
       'OTP not found or expired. Please request a new OTP.'
     );
   }
 
-
   // Check expiry
   if (verification.expiresAt < new Date()) {
-
     await EmailVerification.deleteOne({
       _id: verification._id,
     });
 
     res.status(400);
-
     throw new Error(
       'OTP has expired. Please request a new OTP.'
     );
   }
 
-
   // Check OTP
   if (
     verification.otp !== String(otp).trim()
   ) {
-
     res.status(400);
-
     throw new Error('Invalid OTP');
   }
 
-
   res.json({
-
     success: true,
 
     message: 'OTP verified successfully',
@@ -690,123 +617,94 @@ const verifyResetOtp = asyncHandler(async (req, res) => {
 // ============================================================
 
 const resetPassword = asyncHandler(async (req, res) => {
-
   const {
     email,
     otp,
     password,
   } = req.body;
 
-
   if (!email || !otp || !password) {
-
     res.status(400);
-
     throw new Error(
       'Email, OTP and new password are required'
     );
   }
 
-
   if (password.length < 6) {
-
     res.status(400);
-
     throw new Error(
       'Password must be at least 6 characters'
     );
   }
 
-
   const normalizedEmail = normalizeEmail(email);
-
 
   // Find reset OTP
   const verification =
     await EmailVerification.findOne({
-
       email: normalizedEmail,
-
       purpose: 'password-reset',
     });
 
-
   if (!verification) {
-
     res.status(400);
-
     throw new Error(
       'OTP not found or expired. Please request a new OTP.'
     );
   }
 
-
   // Check expiry
   if (verification.expiresAt < new Date()) {
-
     await EmailVerification.deleteOne({
       _id: verification._id,
     });
 
     res.status(400);
-
     throw new Error(
       'OTP has expired. Please request a new OTP.'
     );
   }
 
-
   // Check OTP
   if (
     verification.otp !== String(otp).trim()
   ) {
-
     res.status(400);
-
     throw new Error('Invalid OTP');
   }
-
 
   // Find user
   const user = await User.findOne({
     email: normalizedEmail,
   });
 
-
   if (!user) {
-
     await EmailVerification.deleteOne({
       _id: verification._id,
     });
 
     res.status(400);
-
     throw new Error(
       'Unable to reset password'
     );
   }
 
-
   /*
-   * IMPORTANT:
-   *
    * Assign plain password.
    *
    * User.js pre-save hook will hash it ONCE.
    */
+
   user.password = password;
 
   await user.save();
-
 
   // Delete OTP after successful reset
   await EmailVerification.deleteOne({
     _id: verification._id,
   });
 
-
   res.json({
-
     success: true,
 
     message:
@@ -821,24 +719,17 @@ const resetPassword = asyncHandler(async (req, res) => {
 // ============================================================
 
 const getProfile = asyncHandler(async (req, res) => {
-
   const user = await User.findById(
     req.user._id
   );
 
-
   if (!user) {
-
     res.status(404);
-
     throw new Error('User not found');
   }
 
-
   res.json({
-
     success: true,
-
     data: user,
   });
 });
@@ -850,19 +741,14 @@ const getProfile = asyncHandler(async (req, res) => {
 // ============================================================
 
 const updateProfile = asyncHandler(async (req, res) => {
-
   const user = await User.findById(
     req.user._id
   );
 
-
   if (!user) {
-
     res.status(404);
-
     throw new Error('User not found');
   }
-
 
   user.name =
     req.body.name ?? user.name;
@@ -882,18 +768,15 @@ const updateProfile = asyncHandler(async (req, res) => {
   user.theme =
     req.body.theme ?? user.theme;
 
-
   /*
    * Password is optional.
    *
    * If supplied, User.js hashes it once.
    */
+
   if (req.body.password) {
-
     if (req.body.password.length < 6) {
-
       res.status(400);
-
       throw new Error(
         'Password must be at least 6 characters'
       );
@@ -902,16 +785,12 @@ const updateProfile = asyncHandler(async (req, res) => {
     user.password = req.body.password;
   }
 
-
   const updated = await user.save();
 
-
   res.json({
-
     success: true,
 
     data: {
-
       _id: updated._id,
 
       name: updated.name,
@@ -922,6 +801,7 @@ const updateProfile = asyncHandler(async (req, res) => {
 
       theme: updated.theme,
 
+      // Profile information
       college: updated.college,
 
       branch: updated.branch,

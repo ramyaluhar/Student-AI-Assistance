@@ -1,8 +1,7 @@
-// pages/Login.jsx
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiMail, FiLock, FiLoader } from 'react-icons/fi';
+
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -18,52 +17,37 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const validate = () => {
-  const errs = {};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-    errs.email = 'Enter a valid email address';
-  }
+    const errs = {};
 
-  setErrors(errs);
+    if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+      errs.email = 'Enter a valid email address';
+    }
 
-  return Object.keys(errs).length === 0;
-};
+    setErrors(errs);
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+    if (Object.keys(errs).length > 0) return;
 
-  // Only validate email on the frontend first.
-  // Password validation will happen after we know the email is valid.
-  const errs = {};
+    setLoading(true);
 
-  if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-    errs.email = 'Enter a valid email address';
-  }
+    try {
+      await login(form);
+      navigate('/dashboard');
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Login failed. Please try again.';
 
-  setErrors(errs);
-
-  if (Object.keys(errs).length > 0) return;
-
-  setLoading(true);
-
-  try {
-    await login(form);
-    navigate('/dashboard');
-  } catch (err) {
-    // Backend error will be displayed here
-    const message =
-      err?.response?.data?.message ||
-      err?.message ||
-      'Login failed. Please try again.';
-
-    setErrors({
-      password: message,
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+      setErrors({
+        password: message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center px-4 py-8 transition-colors duration-200">
@@ -78,12 +62,12 @@ const handleSubmit = async (e) => {
         {/* Header */}
         <div className="text-center mb-8">
 
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl bg-primary-600 text-white text-xl font-bold">
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl bg-primary-600 overflow-hidden">
             <img
-                  src="/logo.png"
-                  alt="Assist AI"
-                  className="h-full w-full object-cover object-center"
-                  />
+              src="/logo.png"
+              alt="Assist AI"
+              className="h-full w-full object-cover object-center"
+            />
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -105,6 +89,7 @@ const handleSubmit = async (e) => {
 
           {/* Email */}
           <div>
+
             <label className="label">
               Email address
             </label>
@@ -136,11 +121,12 @@ const handleSubmit = async (e) => {
                 {errors.email}
               </p>
             )}
-          </div>
 
+          </div>
 
           {/* Password */}
           <div>
+
             <label className="label">
               Password
             </label>
@@ -172,18 +158,20 @@ const handleSubmit = async (e) => {
                 {errors.password}
               </p>
             )}
+
           </div>
 
           {/* Forgot Password */}
           <div className="text-right">
+
             <Link
               to="/forgot-password"
               className="text-sm text-primary-600 font-semibold hover:underline"
             >
               Forgot password?
             </Link>
-          </div>
 
+          </div>
 
           {/* Login Button */}
           <button
@@ -200,7 +188,6 @@ const handleSubmit = async (e) => {
 
         </form>
 
-
         {/* Register Link */}
         <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-6">
 
@@ -214,6 +201,57 @@ const handleSubmit = async (e) => {
           </Link>
 
         </p>
+
+        {/* Developer Credit */}
+        <div className="mt-10 text-center">
+
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+            Built & Designed by
+          </p>
+
+          <div className="flex items-center justify-center gap-6">
+
+            {/* Ramya */}
+            <div className="flex flex-col items-center">
+
+              <img
+                src="/ramya-photo.png"
+                alt="Ramya Chitroda"
+                className="w-24 h-24 object-contain"
+              />
+
+              <span className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                Ramya Chitroda
+              </span>
+
+            </div>
+
+            <span className="text-gray-300 dark:text-gray-700">
+              ×
+            </span>
+
+            {/* Jay */}
+            <div className="flex flex-col items-center">
+
+              <img
+                src="/jay-photo.png"
+                alt="Jay Makwana"
+                className="w-24 h-24 object-contain"
+              />
+
+              <span className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                Jay Makwana
+              </span>
+
+            </div>
+
+          </div>
+
+          <p className="mt-4 text-[11px] text-gray-400 dark:text-gray-600">
+            © 2026 Assist AI · All Rights Reserved
+          </p>
+
+        </div>
 
       </div>
     </div>

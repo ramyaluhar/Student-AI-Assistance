@@ -1,5 +1,3 @@
-// pages/Register.jsx
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -14,7 +12,6 @@ import {
 import toast from 'react-hot-toast';
 
 import { registerApi, verifyEmailApi, resendOtpApi } from '../api/authApi';
-import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 
 const Register = () => {
@@ -36,6 +33,8 @@ const Register = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const validate = () => {
     const errs = {};
@@ -109,7 +108,6 @@ const Register = () => {
 
       const data = res.data.data;
 
-      // Save login session after successful verification
       const { token, ...userData } = data;
 
       localStorage.setItem('token', token);
@@ -266,7 +264,6 @@ const Register = () => {
               <FiArrowLeft size={15} />
               Back to registration
             </button>
-
           </>
         ) : (
 
@@ -278,12 +275,12 @@ const Register = () => {
             {/* Header */}
             <div className="text-center mb-8">
 
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl bg-primary-600 text-white text-xl font-bold">
-                  <img
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl bg-primary-600 overflow-hidden">
+                <img
                   src="/logo.png"
                   alt="Assist AI"
                   className="h-full w-full object-cover object-center"
-                  />
+                />
               </div>
 
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -338,7 +335,6 @@ const Register = () => {
                 )}
               </div>
 
-
               {/* Email */}
               <div>
                 <label className="label">
@@ -373,7 +369,6 @@ const Register = () => {
                   </p>
                 )}
               </div>
-
 
               {/* Password + Confirm */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -415,7 +410,6 @@ const Register = () => {
 
                 </div>
 
-
                 {/* Confirm */}
                 <div>
 
@@ -455,7 +449,6 @@ const Register = () => {
 
               </div>
 
-
               {/* College */}
               <div>
 
@@ -487,7 +480,6 @@ const Register = () => {
 
               </div>
 
-
               {/* Branch + Semester */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
@@ -512,7 +504,6 @@ const Register = () => {
                   />
 
                 </div>
-
 
                 {/* Semester */}
                 <div>
@@ -542,13 +533,54 @@ const Register = () => {
 
               </div>
 
+                    {/* Terms & Privacy Agreement */}
+<div className="flex items-start gap-2 mt-4">
+  <input
+    type="checkbox"
+    id="terms"
+    checked={agreedToTerms}
+    onChange={(e) => setAgreedToTerms(e.target.checked)}
+    className="mt-1 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+  />
+
+  <label
+    htmlFor="terms"
+    className="text-sm text-gray-500 dark:text-gray-400 leading-5 cursor-pointer"
+  >
+    By signing up, I confirm that I have read and agree to the{' '}
+    
+    <Link
+      to="/terms"
+      target="_blank"
+      className="text-primary-600 font-medium hover:underline"
+    >
+      Terms of Service
+    </Link>
+    
+    {' '}and{' '}
+    
+    <Link
+      to="/privacy"
+      target="_blank"
+      className="text-primary-600 font-medium hover:underline"
+    >
+      Privacy Policy
+    </Link>
+    .
+  </label>
+</div>
+
 
               {/* Create Account */}
               <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full"
-              >
+  type="submit"
+  disabled={loading || !agreedToTerms}
+  className={`btn-primary w-full ${
+    !agreedToTerms
+      ? 'opacity-50 cursor-not-allowed'
+      : ''
+  }`}
+>
                 {loading ? (
                   <FiLoader className="animate-spin" />
                 ) : (
@@ -557,7 +589,6 @@ const Register = () => {
               </button>
 
             </form>
-
 
             {/* Login Link */}
             <p className="text-sm text-center text-gray-500 dark:text-gray-400 mt-6">
@@ -572,6 +603,57 @@ const Register = () => {
               </Link>
 
             </p>
+
+            {/* Developer Credit */}
+            <div className="mt-10 text-center">
+
+              <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+                Built & Designed by
+              </p>
+
+              <div className="flex items-center justify-center gap-6">
+
+                {/* Ramya */}
+                <div className="flex flex-col items-center">
+
+                  <img
+                    src="/ramya-photo.png"
+                    alt="Ramya Chitroda"
+                    className="w-24 h-24 object-contain"
+                  />
+
+                  <span className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Ramya Chitroda
+                  </span>
+
+                </div>
+
+                <span className="text-gray-300 dark:text-gray-700">
+                  ×
+                </span>
+
+                {/* Jay */}
+                <div className="flex flex-col items-center">
+
+                  <img
+                    src="/jay-photo.png"
+                    alt="Jay Makwana"
+                    className="w-24 h-24 object-contain"
+                  />
+
+                  <span className="mt-1 text-xs font-medium text-gray-500 dark:text-gray-400">
+                    Jay Makwana
+                  </span>
+
+                </div>
+
+              </div>
+
+              <p className="mt-4 text-[11px] text-gray-400 dark:text-gray-600">
+                © 2026 Assist AI · All Rights Reserved
+              </p>
+
+            </div>
 
           </>
         )}

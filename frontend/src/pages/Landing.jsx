@@ -69,7 +69,7 @@ const Landing = () => {
             AI
           </span>
 
-          StudyMate
+          StudentGenie
         </Link>
 
         {/* Navigation */}
@@ -183,7 +183,7 @@ const Landing = () => {
       ========================== */}
 
       <footer className="text-center text-sm text-gray-400 dark:text-gray-600 pb-8 px-4">
-        © 2026 StudyMate · Built & Designed by Ramya Chitroda & Jay Makwana · All Rights Reserved
+        © 2026 StudentGenie · Built & Designed by Ramya Chitroda & Jay Makwana · All Rights Reserved
       </footer>
 
     </div>

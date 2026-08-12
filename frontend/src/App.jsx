@@ -24,6 +24,9 @@ import Landing from './pages/Landing';
 
 import ForgotPassword from './pages/ForgotPassword';
 
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+
 function App() {
   return (
     <>
@@ -56,6 +59,10 @@ function App() {
         <Route path="*" element={<Navigate to="/404" replace />} />
 
         <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+
       </Routes>
     </>
   );

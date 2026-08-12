@@ -4,8 +4,17 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  FiGrid, FiMessageSquare, FiFileText, FiHelpCircle, FiLayers,
-  FiCalendar, FiCheckSquare, FiClipboard, FiUser, FiShield, FiX,
+  FiGrid,
+  FiMessageSquare,
+  FiFileText,
+  FiHelpCircle,
+  FiLayers,
+  FiCalendar,
+  FiCheckSquare,
+  FiClipboard,
+  FiUser,
+  FiShield,
+  FiX,
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 
@@ -39,19 +48,42 @@ const Sidebar = ({ open, onClose }) => {
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
+        {/* =========================
+            SIDEBAR HEADER
+        ========================== */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 dark:border-gray-800">
+
+          {/* Logo + Name */}
           <div className="flex items-center gap-2">
+
+            {/* AI Logo */}
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold text-sm">
               AI
             </div>
-            <span className="font-bold text-gray-800 dark:text-gray-100">StudyMate</span>
+
+            {/* StudentGenie */}
+            <span className="font-bold text-gray-800 dark:text-gray-100">
+              Student
+              <span className="text-primary-600">Genie</span>
+            </span>
+
           </div>
-          <button onClick={onClose} className="lg:hidden text-gray-500">
+
+          {/* Mobile Close Button */}
+          <button
+            onClick={onClose}
+            className="lg:hidden text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          >
             <FiX size={20} />
           </button>
+
         </div>
 
+        {/* =========================
+            NAVIGATION
+        ========================== */}
         <nav className="p-3 space-y-1 overflow-y-auto h-[calc(100%-4rem)]">
+
           {navItems.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
@@ -70,6 +102,7 @@ const Sidebar = ({ open, onClose }) => {
             </NavLink>
           ))}
 
+          {/* Admin Panel */}
           {user?.role === 'admin' && (
             <NavLink
               to="/admin"
@@ -86,6 +119,7 @@ const Sidebar = ({ open, onClose }) => {
               Admin Panel
             </NavLink>
           )}
+
         </nav>
       </aside>
     </>
