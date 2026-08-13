@@ -30,9 +30,6 @@ const adminRoutes = require('./routes/adminRoutes');
 // Connect to MongoDB
 connectDB();
 
-const dns = require('dns');
-dns.setDefaultResultOrder('ipv4first');
-
 const app = express();
 
 // Trust Render's reverse proxy
