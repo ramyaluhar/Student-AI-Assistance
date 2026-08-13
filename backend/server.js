@@ -2,6 +2,10 @@
 // Entry point: sets up Express app, middleware, routes, and starts the server.
 
 require('dotenv').config();
+
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first'); // must run before anything connects to Mongo
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');

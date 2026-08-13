@@ -9,6 +9,7 @@ const connectDB = async () => {
       // Fail fast (10s) instead of the 30s default if MongoDB is
       // unreachable at startup — gives a clear, quick error in dev/CI.
       serverSelectionTimeoutMS: 10000,
+      family: 4, // force IPv4 - avoids Render's IPv6 ENETUNREACH issue
     });
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
