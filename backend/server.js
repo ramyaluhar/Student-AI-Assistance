@@ -28,6 +28,9 @@ connectDB();
 
 const app = express();
 
+// Trust Render's reverse proxy
+app.set('trust proxy', 1);
+
 // Security & core middleware
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(
