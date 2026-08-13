@@ -1,33 +1,32 @@
 // utils/sendEmail.js
-const nodemailer = require('nodemailer');
-const dns = require('dns');
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  // Force IPv4 resolution directly at the DNS lookup level —
-  // more reliable than the 'family' option on some Node versions.
-  lookup: (hostname, options, callback) => {
-    dns.lookup(hostname, { family: 4 }, callback);
-  },
-  connectionTimeout: 15000,
-  greetingTimeout: 15000,
-  socketTimeout: 20000,
-});
+// Sends emails using Brevo's HTTP API (avoids Render's SMTP port issues entirely).
 
 const sendEmail = async ({ to, subject, text, html }) => {
-  await transporter.sendMail({
-    from: `"AI Student Assistant" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    text,
-    html,
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'api-key': process.env.BREVO_API_KEY,
+    },
+    body: JSON.stringify({
+      sender: {
+        name: 'AI Student Assistant',
+        email: process.env.BREVO_SENDER_EMAIL,
+      },
+      to: [{ email: to }],
+      subject,
+      textContent: text,
+      htmlContent: html,
+    }),
   });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Brevo API error: ${response.status}`);
+  }
+
+  return response.json();
 };
 
 module.exports = sendEmail;
